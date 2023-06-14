@@ -1,0 +1,7 @@
+{
+    "defaultSchema": "cdc_scd",
+    "assertionSchema": "dataform_assertions",
+    "warehouse": "bigquery",
+    "defaultDatabase": "PROJECT_ID",
+    "defaultLocation": "us"
+}

@@ -1,0 +1,18 @@
+config {
+    type: "view"
+}
+
+
+-- This view should apply any transformations required to each event
+-- (e.g. introducing a business key).
+-- While this view won't be used for querying by any user, it's useful
+-- to have it here as a top level Dataform component. That way we're able 
+-- to build all the logic it needs using Dataform's utilities.
+SELECT
+    events.key,
+    events.columnA,
+    events.columnB,
+    events.timestamp,
+    events.operation
+FROM
+    ${ref("events")} AS events

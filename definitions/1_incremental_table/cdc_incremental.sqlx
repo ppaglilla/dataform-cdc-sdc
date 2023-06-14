@@ -1,0 +1,60 @@
+config {
+    type: "incremental",
+    uniqueKey: ["key", "scd_valid_from"], // scd_valid_from should be part of the key
+    bigquery: {
+        partitionBy: "columnA"
+    }
+}
+
+WITH events AS (
+    -- Limit the events processed to those that happened after the last
+    -- known merge timestamp for incremental runs.
+    SELECT * FROM ${ref("transformed_events")}
+    ${when(incremental(), `
+        WHERE timestamp >= (SELECT MAX(COALESCE(scd_valid_to, scd_valid_from)) FROM ${self()})
+    `)}
+    -- Remove possible duplicates
+    QUALIFY 1 = ROW_NUMBER() OVER (PARTITION BY key, timestamp ORDER BY timestamp)
+),
+-- When in incremental mode, fetch all current records
+-- These are the ones that could be updated, but only the ones
+-- that had changes will be
+${when(incremental(), `
+current_data AS (
+    SELECT * FROM ${self()} WHERE is_current IS TRUE
+),
+`)}
+incremental_data AS (
+    SELECT
+        events.key,
+        events.columnA,
+        events.columnB,
+        events.timestamp AS scd_valid_from,
+        LEAD(events.timestamp) OVER 
+            (PARTITION BY events.key ORDER BY events.timestamp ASC)
+        AS scd_valid_to,
+        events.operation
+    FROM
+        events
+    -- If running in incremental mode, upsert only the records that either
+    --   A. are current and had at least one new event. These will be closed.
+    --   B. are new events. If there are multiple new events for the same key, the
+    --      ones that should be closed will be.
+    ${when(incremental(), `
+        LEFT JOIN current_data AS merged 
+            ON events.key = merged.key
+            AND events.timestamp = merged.scd_valid_from
+    `)}
+)
+SELECT
+    key,
+    columnA,
+    columnB,
+    scd_valid_from,
+    scd_valid_to,
+    scd_valid_to IS NULL AS is_current
+FROM incremental_data
+-- Deletes should not be inserted as separate rows
+-- Previous records will be closed accordingly anyway, because their
+-- valid_to date was set in the incremental_data CTE
+WHERE operation != 'D'

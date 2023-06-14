@@ -1,0 +1,16 @@
+config {
+    type: "operations"
+}
+
+
+-- Creates the output table for the CDC process if it does not exist
+-- This would do nothing in most runs, but allows us to have the DDL
+-- for the output table in the Dataform project.
+CREATE TABLE IF NOT EXISTS ${ref("cdc_update_plus_insert_js")} (
+    `key` INT64,
+    columnA DATE,
+    columnB STRING,
+    scd_valid_from TIMESTAMP,
+    scd_valid_to TIMESTAMP,
+    is_current BOOL
+);

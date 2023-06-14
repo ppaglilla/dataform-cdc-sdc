@@ -1,0 +1,9 @@
+-- Events emulates the table that contains the CDC events 
+-- written by Aecorsoft.
+
+config {
+  type: "declaration",
+  schema: "cdc_scd",
+  name: "events",
+  description: "Raw CDC events table"
+}

@@ -1,0 +1,8 @@
+-- Declaration for the output table, allowing us to reference it dynamically
+-- instead of hard-coding the table in other Dataform files
+config {
+  type: "declaration",
+  schema: "cdc_scd",
+  name: "cdc_update_plus_insert_js",
+  description: "Output table for this CDC process, created by cdc_update_plus_insert.sqlx"
+}
